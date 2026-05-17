@@ -38,7 +38,8 @@ function loadReceipts() {
 function saveReceipts(data) {
   try { localStorage.setItem(LS_KEY, JSON.stringify(data)); } catch(e) { console.warn(e); }
 }
-async function analyzeReceipt(base64) {
+async function analyzeReceipt(base64, mimeType = "image/jpeg") {
+
   const prompt = `Du bist ein Kassenbon-Experte. Analysiere dieses Bon-Foto.
 Antworte NUR mit JSON (kein Markdown):
 {"store":"Geschäftsname","date":"YYYY-MM-DD","total":12.34,"items":[{"name":"Produkt","quantity":1,"price":1.99,"category":"Lebensmittel"}]}
