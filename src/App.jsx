@@ -56,7 +56,7 @@ date: heutiges Datum falls nicht lesbar. total: Gesamtbetrag als Zahl. Falls kei
       model: "claude-sonnet-4-20250514",
       max_tokens: 1200,
       messages: [{ role: "user", content: [
-        { type: "image", source: { type: "base64", media_type: "image/jpeg", data: base64 } },
+        { type: "image", source: { type: "base64", media_type: file.type || "image/jpeg", data: base64 } },
         { type: "text", text: prompt }
       ]}]
     })
