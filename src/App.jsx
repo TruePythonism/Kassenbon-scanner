@@ -8,7 +8,6 @@ const C = {
   blue: "#60a5fa", orange: "#fb923c", purple: "#c084fc",
   yellow: "#fbbf24", cyan: "#22d3ee", pink: "#fb7185", gray: "#94a3b8",
 };
-
 const CAT_COLORS = {
   Lebensmittel: "#34d399", Getränke: "#60a5fa", Haushalt: "#fbbf24",
   Hygiene: "#c084fc", Snacks: "#fb923c", Tiefkühlkost: "#22d3ee",
@@ -19,7 +18,6 @@ const CAT_ICONS = {
   Hygiene: "🧴", Snacks: "🍫", Tiefkühlkost: "🧊",
   Backwaren: "🥐", Sonstiges: "📦",
 };
-
 const css = `
   @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@400;500;600;700;800&display=swap');
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
@@ -33,16 +31,13 @@ const css = `
   @keyframes beam { 0% { top:6%; opacity:1; } 85% { opacity:1; } 100% { top:90%; opacity:0; } }
   @keyframes popIn { 0% { transform:scale(.88) translateX(-50%); opacity:0; } 100% { transform:scale(1) translateX(-50%); opacity:1; } }
 `;
-
 const LS_KEY = "kassenbon-receipts-v1";
 function loadReceipts() {
-  try { return JSON.parse(localStorage.getItem(LS_KEY) || "[]"); }
-  catch { return []; }
+  try { return JSON.parse(localStorage.getItem(LS_KEY) || "[]"); } catch { return []; }
 }
 function saveReceipts(data) {
   try { localStorage.setItem(LS_KEY, JSON.stringify(data)); } catch(e) { console.warn(e); }
 }
-
 async function analyzeReceipt(base64) {
   const prompt = `Du bist ein Kassenbon-Experte. Analysiere dieses Bon-Foto.
 Antworte NUR mit JSON (kein Markdown):
@@ -50,13 +45,11 @@ Antworte NUR mit JSON (kein Markdown):
 Kategorien: Lebensmittel, Getränke, Haushalt, Hygiene, Snacks, Tiefkühlkost, Backwaren, Sonstiges
 date: heutiges Datum falls nicht lesbar. total: Gesamtbetrag als Zahl. Falls kein Bon: total:0, items:[].`;
   const res = await fetch("/api/analyze", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
+    method: "POST", headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      model: "claude-sonnet-4-20250514",
-      max_tokens: 1200,
+      model: "claude-sonnet-4-20250514", max_tokens: 1200,
       messages: [{ role: "user", content: [
-        { type: "image", source: { type: "base64", media_type: file.type || "image/jpeg", data: base64 } },
+        { type: "image", source: { type: "base64", media_type: "image/jpeg", data: base64 } },
         { type: "text", text: prompt }
       ]}]
     })
@@ -68,12 +61,10 @@ date: heutiges Datum falls nicht lesbar. total: Gesamtbetrag als Zahl. Falls kei
   if (!parsed.date || parsed.date.includes("Y")) parsed.date = new Date().toISOString().slice(0,10);
   return parsed;
 }
-
 const chf = n => `CHF ${Number(n||0).toFixed(2)}`;
 const todayStr = () => new Date().toISOString().slice(0,10);
 const mk = d => (d || todayStr()).slice(0,7);
 const mlabel = s => new Date(s+"-01").toLocaleString("de-CH",{month:"long",year:"numeric"});
-
 function byCat(items) {
   const m = {};
   items.forEach(it => {
@@ -93,14 +84,12 @@ function byItem(items) {
   });
   return Object.values(m).sort((a,b) => b.total - a.total);
 }
-
 function Spinner() {
   return <div style={{ width:28, height:28, border:"3px solid #0d2e1f", borderTop:"3px solid #34d399", borderRadius:"50%", animation:"spin .8s linear infinite" }} />;
 }
 function Badge({ cat }) {
   return <span style={{ fontSize:11, fontWeight:600, padding:"2px 7px", borderRadius:6, background:"#0d2e1f", color:CAT_COLORS[cat]||"#94a3b8", whiteSpace:"nowrap" }}>{CAT_ICONS[cat]||"📦"} {cat}</span>;
 }
-
 function ScannerView({ onResult }) {
   const [loading, setLoading] = useState(false);
   const [preview, setPreview] = useState(null);
@@ -108,9 +97,8 @@ function ScannerView({ onResult }) {
   const [error, setError] = useState(null);
   const camRef = useRef();
   const libRef = useRef();
-
-    const process = useCallback(async (file) => {
-    if (!file?.type.startsWith("image/")) { setError("Bitte ein Bild auswählen."); return; }
+  const process = useCallback(async (selectedFile) => {
+    if (!selectedFile?.type.startsWith("image/")) { setError("Bitte ein Bild auswählen."); return; }
     setError(null); setLoading(true); setStep("Bild vorbereiten…");
     const reader = new FileReader();
     reader.onload = async (e) => {
@@ -121,10 +109,12 @@ function ScannerView({ onResult }) {
         canvas.height = img.height;
         canvas.getContext("2d").drawImage(img, 0, 0);
         const dataUrl = canvas.toDataURL("image/jpeg", 0.92);
-        setPreview(dataUrl); setStep("KI analysiert Bon…");
+        setPreview(dataUrl);
+        setStep("KI analysiert Bon…");
         try {
           const result = await analyzeReceipt(dataUrl.split(",")[1]);
-          result._id = Date.now(); result._date = result.date || todayStr();
+          result._id = Date.now();
+          result._date = result.date || todayStr();
           onResult(result);
         } catch(err) {
           setError("Fehler: " + (err.message || "Unbekannt"));
@@ -132,10 +122,8 @@ function ScannerView({ onResult }) {
       };
       img.src = e.target.result;
     };
-    reader.readAsDataURL(file);
+    reader.readAsDataURL(selectedFile);
   }, [onResult]);
-
-
   return (
     <div style={{ padding:"0 16px", animation:"fadeUp .35s ease" }}>
       <div style={{ background:"linear-gradient(145deg,#0d2e1f,#080f0a)", border:"1.5px solid #222639", borderRadius:20, padding:28, textAlign:"center", marginBottom:16, position:"relative", overflow:"hidden", minHeight:280, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center" }}>
@@ -168,7 +156,6 @@ function ScannerView({ onResult }) {
     </div>
   );
 }
-
 function ReceiptCard({ r, onDelete }) {
   const [open, setOpen] = useState(false);
   const total = r.total || (r.items||[]).reduce((s,it) => s+(it.price||0)*(it.quantity||1),0);
@@ -208,7 +195,6 @@ function ReceiptCard({ r, onDelete }) {
     </div>
   );
 }
-
 function StatsView({ receipts }) {
   const months = [...new Set(receipts.map(r => mk(r._date)))].sort().reverse();
   const [sel, setSel] = useState(months[0] || mk(todayStr()));
@@ -299,7 +285,6 @@ function StatsView({ receipts }) {
     </div>
   );
 }
-
 export default function App() {
   const [receipts, setReceipts] = useState(() => loadReceipts());
   const [tab, setTab] = useState("scan");
