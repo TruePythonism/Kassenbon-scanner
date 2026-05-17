@@ -112,7 +112,8 @@ function ScannerView({ onResult }) {
         setPreview(dataUrl);
         setStep("KI analysiert Bon…");
         try {
-          const result = await analyzeReceipt(dataUrl.split(",")[1]);
+          const base64 = dataUrl.split(",")[1].replace(/\s/g, "");
+          const result = await analyzeReceipt(base64);
           result._id = Date.now();
           result._date = result.date || todayStr();
           onResult(result);
