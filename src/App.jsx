@@ -114,17 +114,27 @@ function ScannerView({ onResult }) {
     setError(null); setLoading(true); setStep("Bild vorbereiten…");
     const reader = new FileReader();
     reader.onload = async (e) => {
-      const dataUrl = e.target.result;
-      setPreview(dataUrl); setStep("KI analysiert Bon…");
-      try {
-        const result = await analyzeReceipt(dataUrl.split(",")[1]);
-        result._id = Date.now(); result._date = result.date || todayStr();
-        onResult(result);
-      } catch(err) {
-        setError("Fehler: " + (err.message || "Unbekannt"));
-      } finally { setLoading(false); setPreview(null); setStep(""); }
+      // Bild in JPEG umwandeln für API-Kompatibilität
+      const img = new Image();
+      img.onload = async () => {
+        const canvas = document.createElement("canvas");
+        canvas.width = img.width;
+        canvas.height = img.height;
+        canvas.getContext("2d").drawImage(img, 0, 0);
+        const dataUrl = canvas.toDataURL("image/jpeg", 0.92);
+        setPreview(dataUrl); setStep("KI analysiert Bon…");
+        try {
+          const result = await analyzeReceipt(dataUrl.split(",")[1]);
+          result._id = Date.now(); result._date = result.date || todayStr();
+          onResult(result);
+        } catch(err) {
+          setError("Fehler: " + (err.message || "Unbekannt"));
+        } finally { setLoading(false); setPreview(null); setStep(""); }
+      };
+      img.src = e.target.result;
     };
     reader.readAsDataURL(file);
+
   }, [onResult]);
 
   return (
