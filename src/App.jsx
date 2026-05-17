@@ -109,12 +109,11 @@ function ScannerView({ onResult }) {
   const camRef = useRef();
   const libRef = useRef();
 
-  const process = useCallback(async (file) => {
+    const process = useCallback(async (file) => {
     if (!file?.type.startsWith("image/")) { setError("Bitte ein Bild auswählen."); return; }
     setError(null); setLoading(true); setStep("Bild vorbereiten…");
     const reader = new FileReader();
     reader.onload = async (e) => {
-      // Bild in JPEG umwandeln für API-Kompatibilität
       const img = new Image();
       img.onload = async () => {
         const canvas = document.createElement("canvas");
@@ -134,8 +133,8 @@ function ScannerView({ onResult }) {
       img.src = e.target.result;
     };
     reader.readAsDataURL(file);
-
   }, [onResult]);
+
 
   return (
     <div style={{ padding:"0 16px", animation:"fadeUp .35s ease" }}>
