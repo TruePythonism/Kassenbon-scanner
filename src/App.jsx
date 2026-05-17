@@ -102,32 +102,23 @@ function ScannerView({ onResult }) {
     setError(null); setLoading(true); setStep("Bild vorbereiten…");
     const reader = new FileReader();
     reader.onload = async (e) => {
-            const img = new Image();
-      img.onload = async () => {
-        const canvas = document.createElement("canvas");
-        const MAX = 1600;
-        const ratio = Math.min(MAX / img.width, MAX / img.height, 1);
-        canvas.width = Math.round(img.width * ratio);
-        canvas.height = Math.round(img.height * ratio);
-        canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
-        const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
-
-        setPreview(dataUrl);
-        setStep("KI analysiert Bon…");
-        try {
-          const base64 = dataUrl.split(",")[1].replace(/\s/g, "");
-          const result = await analyzeReceipt(base64);
-          result._id = Date.now();
-          result._date = result.date || todayStr();
-          onResult(result);
-        } catch(err) {
-          setError("Fehler: " + (err.message || "Unbekannt"));
-        } finally { setLoading(false); setPreview(null); setStep(""); }
-      };
-      img.src = e.target.result;
+      const dataUrl = e.target.result;
+      setPreview(dataUrl);
+      setStep("KI analysiert Bon…");
+      try {
+        const base64 = dataUrl.substring(dataUrl.indexOf(",") + 1);
+        const mimeType = dataUrl.substring(dataUrl.indexOf(":") + 1, dataUrl.indexOf(";"));
+        const result = await analyzeReceipt(base64, mimeType);
+        result._id = Date.now();
+        result._date = result.date || todayStr();
+        onResult(result);
+      } catch(err) {
+        setError("Fehler: " + (err.message || "Unbekannt"));
+      } finally { setLoading(false); setPreview(null); setStep(""); }
     };
     reader.readAsDataURL(selectedFile);
   }, [onResult]);
+
   return (
     <div style={{ padding:"0 16px", animation:"fadeUp .35s ease" }}>
       <div style={{ background:"linear-gradient(145deg,#0d2e1f,#080f0a)", border:"1.5px solid #222639", borderRadius:20, padding:28, textAlign:"center", marginBottom:16, position:"relative", overflow:"hidden", minHeight:280, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center" }}>
