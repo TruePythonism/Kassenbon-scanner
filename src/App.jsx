@@ -99,27 +99,29 @@ function ScannerView({ onResult }) {
   const [error, setError] = useState(null);
   const camRef = useRef();
   const libRef = useRef();
-  const process = useCallback(async (selectedFile) => {
-    if (!selectedFile?.type.startsWith("image/")) { setError("Bitte ein Bild auswählen."); return; }
+    const process = useCallback(async (selectedFile) => {
+    if (!selectedFile) { setError("Keine Datei ausgewählt."); return; }
     setError(null); setLoading(true); setStep("Bild vorbereiten…");
-    const reader = new FileReader();
-    reader.onload = async (e) => {
-      const dataUrl = e.target.result;
-      setPreview(dataUrl);
+    try {
+      const arrayBuffer = await selectedFile.arrayBuffer();
+      const uint8Array = new Uint8Array(arrayBuffer);
+      let binary = '';
+      for (let i = 0; i < uint8Array.byteLength; i++) {
+        binary += String.fromCharCode(uint8Array[i]);
+      }
+      const base64 = btoa(binary);
+      const mimeType = selectedFile.type || "image/jpeg";
+      setPreview(URL.createObjectURL(selectedFile));
       setStep("KI analysiert Bon…");
-      try {
-        const base64 = dataUrl.substring(dataUrl.indexOf(",") + 1);
-        const mimeType = dataUrl.substring(dataUrl.indexOf(":") + 1, dataUrl.indexOf(";"));
-        const result = await analyzeReceipt(base64, mimeType);
-        result._id = Date.now();
-        result._date = result.date || todayStr();
-        onResult(result);
-      } catch(err) {
-        setError("Fehler: " + (err.message || "Unbekannt"));
-      } finally { setLoading(false); setPreview(null); setStep(""); }
-    };
-    reader.readAsDataURL(selectedFile);
+      const result = await analyzeReceipt(base64, mimeType);
+      result._id = Date.now();
+      result._date = result.date || todayStr();
+      onResult(result);
+    } catch(err) {
+      setError("Fehler: " + (err.message || "Unbekannt"));
+    } finally { setLoading(false); setPreview(null); setStep(""); }
   }, [onResult]);
+
 
   return (
     <div style={{ padding:"0 16px", animation:"fadeUp .35s ease" }}>
