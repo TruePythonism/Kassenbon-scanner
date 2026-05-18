@@ -99,18 +99,20 @@ function ScannerView({ onResult }) {
   const [error, setError] = useState(null);
   const camRef = useRef();
   const libRef = useRef();
-    const process = useCallback(async (selectedFile) => {
+      const process = useCallback(async (selectedFile) => {
     if (!selectedFile) { setError("Keine Datei ausgewählt."); return; }
     setError(null); setLoading(true); setStep("Bild vorbereiten…");
     try {
+      const mimeType = selectedFile.type || "image/jpeg";
       const arrayBuffer = await selectedFile.arrayBuffer();
-      const uint8Array = new Uint8Array(arrayBuffer);
+      const bytes = new Uint8Array(arrayBuffer);
+      const chunkSize = 8192;
       let binary = '';
-      for (let i = 0; i < uint8Array.byteLength; i++) {
-        binary += String.fromCharCode(uint8Array[i]);
+      for (let i = 0; i < bytes.length; i += chunkSize) {
+        const chunk = bytes.subarray(i, i + chunkSize);
+        binary += String.fromCharCode.apply(null, chunk);
       }
       const base64 = btoa(binary);
-      const mimeType = selectedFile.type || "image/jpeg";
       setPreview(URL.createObjectURL(selectedFile));
       setStep("KI analysiert Bon…");
       const result = await analyzeReceipt(base64, mimeType);
@@ -121,6 +123,7 @@ function ScannerView({ onResult }) {
       setError("Fehler: " + (err.message || "Unbekannt"));
     } finally { setLoading(false); setPreview(null); setStep(""); }
   }, [onResult]);
+
 
 
   return (
