@@ -39,29 +39,14 @@ function saveReceipts(data) {
   try { localStorage.setItem(LS_KEY, JSON.stringify(data)); } catch(e) { console.warn(e); }
 }
 async function analyzeReceipt(base64, mimeType = "image/jpeg") {
-
-  const prompt = `Du bist ein Kassenbon-Experte. Analysiere dieses Bon-Foto.
-Antworte NUR mit JSON (kein Markdown):
-{"store":"Geschäftsname","date":"YYYY-MM-DD","total":12.34,"items":[{"name":"Produkt","quantity":1,"price":1.99,"category":"Lebensmittel"}]}
-Kategorien: Lebensmittel, Getränke, Haushalt, Hygiene, Snacks, Tiefkühlkost, Backwaren, Sonstiges
-date: heutiges Datum falls nicht lesbar. total: Gesamtbetrag als Zahl. Falls kein Bon: total:0, items:[].`;
   const res = await fetch("/api/analyze", {
-    method: "POST", headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      model: "claude-sonnet-4-20250514", max_tokens: 1200,
-      messages: [{ role: "user", content: [
-                { type: "image", source: { type: "base64", media_type: mimeType, data: base64 } },
-
-        { type: "text", text: prompt }
-      ]}]
-    })
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ base64, mimeType })
   });
   const data = await res.json();
   if (data.error) throw new Error(data.error.message);
-  const raw = data.content?.map(b => b.text || "").join("") || "{}";
-  const parsed = JSON.parse(raw.replace(/```json|```/g, "").trim());
-  if (!parsed.date || parsed.date.includes("Y")) parsed.date = new Date().toISOString().slice(0,10);
-  return parsed;
+  return data;
 }
 const chf = n => `CHF ${Number(n||0).toFixed(2)}`;
 const todayStr = () => new Date().toISOString().slice(0,10);
