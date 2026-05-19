@@ -13,10 +13,10 @@ export default async function handler(req, res) {
 
   try {
     const { base64, mimeType } = req.body
+    const GEMINI_KEY = process.env.GEMINI_API_KEY || 'AIza_DEIN_KEY_HIER'
 
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=
-=${process.env.GEMINI_API_KEY}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_KEY}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
