@@ -46,8 +46,12 @@ async function analyzeReceipt(base64, mimeType = "image/jpeg") {
   });
   const data = await res.json();
   if (data.error) throw new Error(data.error.message);
+  if (data._remaining !== undefined) {
+    console.log(`Verbleibende Scans diese Woche: ${data._remaining}`);
+  }
   return data;
 }
+
 const chf = n => `CHF ${Number(n||0).toFixed(2)}`;
 const todayStr = () => new Date().toISOString().slice(0,10);
 const mk = d => (d || todayStr()).slice(0,7);
